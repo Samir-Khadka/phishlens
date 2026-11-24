@@ -1,0 +1,53 @@
+/* PhishLens popup — plain, high-contrast, readable in Nepali and English. */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  width: 380px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #1a1a1a;
+  background: #fff;
+}
+#app { padding: 14px 16px 16px; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.brand { display: flex; gap: 10px; align-items: flex-start; }
+.logo { font-size: 26px; line-height: 1; color: #1565c0; }
+h1 { margin: 0; font-size: 18px; line-height: 1.2; }
+.tagline { margin: 2px 0 0; font-size: 12px; color: #555; }
+.lang-toggle {
+  border: 1px solid #ccc; background: #fff; border-radius: 999px;
+  padding: 4px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.domain-row { margin-top: 12px; font-size: 12px; color: #555; }
+.domain-row .label { font-weight: 600; margin-right: 6px; }
+.domain { font-family: ui-monospace, monospace; word-break: break-all; color: #1a1a1a; }
+
+.verdict-card {
+  margin-top: 10px; border-radius: 10px; padding: 12px;
+  border: 2px solid #9e9e9e; background: #fafafa;
+}
+.verdict-red { border-color: #c62828; background: #fdecea; }
+.verdict-yellow { border-color: #f9a825; background: #fff8e1; }
+.verdict-green { border-color: #2e7d32; background: #e8f5e9; }
+.verdict-gray { border-color: #9e9e9e; background: #fafafa; }
+.verdict-title { margin: 0; font-size: 16px; font-weight: 700; }
+.verdict-sub { margin: 4px 0 0; font-size: 13px; color: #444; }
+
+.reasons h2, .checked summary { font-size: 13px; margin: 14px 0 6px; }
+.reasons ul, .checked ul { margin: 0; padding-left: 18px; }
+.reasons li { margin-bottom: 6px; }
+.reason.severity-high { font-weight: 600; }
+.checked { margin-top: 4px; font-size: 12px; color: #555; }
+.checked li { margin-bottom: 2px; }
+
+.actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.btn {
+  border: 1px solid #1565c0; background: #fff; color: #1565c0;
+  border-radius: 8px; padding: 9px 12px; font-size: 14px; cursor: pointer;
+}
+.btn.primary { background: #1565c0; color: #fff; font-weight: 600; }
+.btn.danger-outline { border-color: #c62828; color: #c62828; }
+.report-done { font-size: 12px; color: #2e7d32; margin: 8px 0 0; }
+.privacy { margin-top: 14px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 8px; }
+.privacy p { margin: 0; }

