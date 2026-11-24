@@ -1,8 +1,8 @@
-# PhishLens — Phishing X-ray
+# Sachet — Phishing X-ray
 
 > Shows you why a login page looks fake, in plain Nepali or English, before you type your password.
 
-Chrome, Edge and Firefox already block known phishing sites, so PhishLens does not compete on the blocklist. It wins on three things they skip:
+Chrome, Edge and Firefox already block known phishing sites, so Sachet does not compete on the blocklist. It wins on three things they skip:
 
 - **Explanations, not just a warning screen** — "this domain imitates eSewa's official site and its form posts to a different server."
 - **Local brands and local language** — Nepali wallets and banks, with verdicts and reasons in natural Nepali (Devanagari and Romanized Nepali scam phrases are detected too).
@@ -129,7 +129,20 @@ npm run zip          # store-ready zip
 
 ## Name
 
-Working name: **PhishLens**. Also considered: Sachet (Nepali for "alert"), LoginLens. Check the Chrome Web Store, Firefox Add-ons, GitHub and domain availability before committing — the name is provisional until then.
+**Sachet** — the Nepali word for "alert". The original working name was
+PhishLens, but that name is already used by a live Chrome Web Store listing
+("PhishLens - Advanced Browser Security Extension for Phishing Protection"),
+so the product was renamed for store submission. The GitHub repository slug
+is still `phishlens`. No search found a Chrome Web Store extension named
+"Sachet" (checked Nov 2026) — confirm again in the dashboard before
+submitting, since store search is not exhaustive.
+
+## Chrome Web Store
+
+Store listing text is in `store/listing.md` and the full submission
+walkthrough (developer account, $5 one-time fee, zip build, screenshots,
+review, common rejections) is in `docs/store-submission.md`. The privacy
+policy is `PRIVACY.md`, linked from the listing and the popup footer.
 
 ## Success metrics
 

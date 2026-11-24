@@ -22,6 +22,7 @@ export interface UiStrings {
   reportDone: string;
   officialSiteButton: string;
   privacyNote: string;
+  privacyLink: string;
   languageLabel: string;
   noLoginForm: string;
 }
@@ -38,13 +39,14 @@ export const STRINGS: Record<Lang, UiStrings> = {
     verdictGreen: 'No warning signs found',
     verdictGreenSub: 'This is a verified official domain. Still, never share your OTP or PIN with anyone.',
     verdictGray: 'Unknown site — no claim',
-    verdictGraySub: 'PhishLens found nothing to warn about, and nothing to confirm.',
+    verdictGraySub: 'Sachet found nothing to warn about, and nothing to confirm.',
     reasonsTitle: 'Why this verdict',
     checkedTitle: 'What was checked',
     reportButton: 'Report this page',
     reportDone: 'Reported. Thank you — reports help protect other users.',
     officialSiteButton: 'Open the official site',
     privacyNote: 'All checks run on your device. No URLs, page text or typed values ever leave this browser.',
+    privacyLink: 'Privacy policy',
     languageLabel: 'नेपाली',
     noLoginForm: 'No login form on this page.',
   },
@@ -59,13 +61,14 @@ export const STRINGS: Record<Lang, UiStrings> = {
     verdictGreen: 'कुनै चेतावनी संकेत भेटिएन',
     verdictGreenSub: 'यो प्रमाणित आधिकारिक डोमेन हो। तापनि, आफ्नो OTP वा PIN कसैलाई पनि नदिनुहोस्।',
     verdictGray: 'अपरिचित साइट — कुनै दाबी छैन',
-    verdictGraySub: 'PhishLens ले चेतावनी दिनुपर्ने केही भेटेन, र पुष्टि गर्ने केही पनि भेटेन।',
+    verdictGraySub: 'Sachet ले चेतावनी दिनुपर्ने केही भेटेन, र पुष्टि गर्ने केही पनि भेटेन।',
     reasonsTitle: 'यो निष्कर्ष किन',
     checkedTitle: 'के-के जाँचियो',
     reportButton: 'यो पेज रिपोर्ट गर्नुहोस्',
     reportDone: 'रिपोर्ट भयो। धन्यवाद — रिपोर्टले अरू प्रयोगकर्तालाई जोगाउन मद्दत गर्छ।',
     officialSiteButton: 'आधिकारिक साइट खोल्नुहोस्',
     privacyNote: 'सबै जाँच तपाईंको आफ्नै डिभाइसमा हुन्छ। कुनै URL, पेजको पाठ वा टाइप गरेको कुरा यो ब्राउजरबाट बाहिर जाँदैन।',
+    privacyLink: 'गोपनीयता नीति',
     languageLabel: 'English',
     noLoginForm: 'यो पेजमा कुनै लगइन फारम छैन।',
   },

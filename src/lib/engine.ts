@@ -1,4 +1,4 @@
-// PhishLens analysis engine — pure TypeScript, zero browser dependencies.
+// Sachet analysis engine — pure TypeScript, zero browser dependencies.
 //
 // This module turns page signals into a verdict (red / yellow / green / gray)
 // plus human-readable reasons in English and Nepali. It is deliberately
@@ -539,8 +539,8 @@ export function analyzePage(signals: PageSignals, brands: Brand[]): AnalysisResu
     reasons.push({
       id: 'unknown-site',
       severity: 'low',
-      en: 'Unknown site — PhishLens makes no claim about it. No login form or brand signals were found.',
-      ne: 'अपरिचित साइट — PhishLens ले यसबारे कुनै दाबी गर्दैन। कुनै लगइन फारम वा ब्रान्ड संकेत भेटिएन।',
+      en: 'Unknown site — Sachet makes no claim about it. No login form or brand signals were found.',
+      ne: 'अपरिचित साइट — Sachet ले यसबारे कुनै दाबी गर्दैन। कुनै लगइन फारम वा ब्रान्ड संकेत भेटिएन।',
     });
   }
 

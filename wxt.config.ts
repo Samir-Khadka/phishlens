@@ -1,6 +1,6 @@
 import { defineConfig } from 'wxt';
 
-// PhishLens — Phishing X-ray browser extension (Manifest V3).
+// Sachet — Phishing X-ray browser extension (Manifest V3).
 // One codebase builds for Chrome/Edge (Chromium) and Firefox.
 //
 // v0.1 permissions are deliberately minimal: the user clicks the icon to
@@ -9,12 +9,13 @@ import { defineConfig } from 'wxt';
 // turns it on, with a plain-language explanation of why.
 export default defineConfig({
   manifest: {
-    name: 'PhishLens — Phishing X-ray',
+    name: 'Sachet — Phishing X-ray',
     description:
       'Shows why a login page looks fake, in plain Nepali or English, before you type your password.',
+    homepage_url: 'https://github.com/Samir-Khadka/phishlens',
     permissions: ['activeTab', 'storage', 'scripting'],
     action: {
-      default_title: 'PhishLens — X-ray this page',
+      default_title: 'Sachet — X-ray this page',
     },
     icons: {
       16: 'icon-16.png',

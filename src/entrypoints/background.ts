@@ -1,4 +1,4 @@
-// PhishLens background service worker (Manifest V3).
+// Sachet background service worker (Manifest V3).
 //
 // Responsibilities:
 //  - Keep the brand registry in memory (bundled JSON, no network).

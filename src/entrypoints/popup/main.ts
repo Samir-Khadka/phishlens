@@ -1,4 +1,4 @@
-// PhishLens popup.
+// Sachet popup.
 //
 // Flow (v0.1, click-to-scan):
 //   1. On open, read the active tab and inject collectPageSignals() into it
@@ -40,6 +40,7 @@ function renderStrings(): void {
   ($('report-button') as HTMLButtonElement).textContent = s.reportButton;
   ($('official-button') as HTMLButtonElement).textContent = s.officialSiteButton;
   ($('privacy-note') as HTMLElement).textContent = s.privacyNote;
+  ($('privacy-link') as HTMLAnchorElement).textContent = s.privacyLink;
   if (lastResult) renderResult(lastResult);
 }
 
@@ -153,7 +154,7 @@ async function runXray(): Promise<void> {
       lang === 'ne'
         ? 'ब्राउजरले यो पेजमा जाँच गर्न दिएन। ठेगाना बार आफैं जाँच्नुहोस्।'
         : 'The browser did not allow checking this page. Check the address bar yourself.';
-    console.warn('PhishLens injection failed:', err);
+    console.warn('Sachet injection failed:', err);
   }
 }
 
