@@ -16,6 +16,10 @@
 //   7. Score == 0                                                  -> gray (unknown, no claim)
 //   Official domain + some warning signals                        -> yellow
 //
+// URL-level checks (IP host, @-trick, unusual port, URL shortener) feed
+// into the same score / severity rules above. analyzeUrl() reuses the
+// same engine for a pasted link: address only, the page is never visited.
+//
 // Wording rule: never say "safe". Green means "no warning signs found"
 // on a verified official domain. Phishing pages can pass checks.
 
@@ -164,6 +168,31 @@ export function normalizeConfusables(hostname: string): string {
 /** True when the hostname carries a punycode (xn--) label. */
 export function hasPunycode(hostname: string): boolean {
   return hostname.toLowerCase().split('.').some((label) => label.startsWith('xn--'));
+}
+
+/** True when the hostname is a bare IP address instead of a domain name. */
+export function isIpHostname(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return true;
+  // IPv6 literals arrive without brackets in location.hostname.
+  return host.includes(':');
+}
+
+/** URL shorteners that hide the real destination. */
+const URL_SHORTENERS = new Set([
+  'bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly',
+  'rb.gy', 'cutt.ly', 'shrtco.de', 'tiny.cc', 'rebrand.ly', 's.id',
+  'shorturl.at', 'qr.ae',
+]);
+
+/** Parse the URL once for the address-level checks; null when unparseable. */
+function urlParts(url: string): { username: string; port: string; path: string } | null {
+  try {
+    const u = new URL(url);
+    return { username: u.username, port: u.port, path: u.pathname.toLowerCase() };
+  } catch {
+    return null;
+  }
 }
 
 // TLDs that appear disproportionately in phishing. A signal, never a verdict.
@@ -328,7 +357,52 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
     }
   }
 
-  // 6. Punycode trick.
+  const parts = urlParts(url);
+
+  // 6. Bare IP address instead of a domain name. Real banks and wallets
+  //    never ask you to log in at an IP address.
+  if (isIpHostname(host)) {
+    reasons.push({
+      id: 'ip-host',
+      severity: 'high',
+      en: 'This site is reached by a bare IP address instead of a domain name — real banks and wallets never do this.',
+      ne: 'यो साइट डोमेन नामको सट्टा खाली IP ठेगानाबाट खोलिएको छ — वास्तविक बैंक र वालेटले कहिल्यै यस्तो गर्दैनन्।',
+    });
+  }
+
+  // 7. The @ trick: https://esewa.com.np@evil.com — the part before @ is
+  //    not the real site; the browser goes to the part after it.
+  if (parts && parts.username) {
+    reasons.push({
+      id: 'userinfo-trick',
+      severity: 'high',
+      en: `This address contains "@" — the part before it (${parts.username}) is not the real site. The browser actually goes to ${reg}.`,
+      ne: `यो ठेगानामा "@" छ — त्यसअघिको भाग (${parts.username}) वास्तविक साइट होइन। ब्राउजरले वास्तवमा ${reg} खोल्छ।`,
+    });
+  }
+
+  // 8. Unusual port on the address (the default ports 80/443 are already
+  //    normalised away by the URL parser, so any port here is non-standard).
+  if (parts && parts.port) {
+    reasons.push({
+      id: 'unusual-port',
+      severity: 'medium',
+      en: `This address uses an unusual port (:${parts.port}). Login pages on real sites almost never do.`,
+      ne: `यो ठेगानामा असामान्य पोर्ट (:${parts.port}) प्रयोग भएको छ। वास्तविक साइटका लगइन पेजमा यस्तो लगभग कहिल्यै हुँदैन।`,
+    });
+  }
+
+  // 9. URL shortener hiding the real destination.
+  if (URL_SHORTENERS.has(reg)) {
+    reasons.push({
+      id: 'url-shortener',
+      severity: 'medium',
+      en: 'This is a shortened link — the real destination is hidden. Shortened links are a common way to smuggle a fake login page past you.',
+      ne: 'यो छोटो पारिएको लिंक हो — वास्तविक गन्तव्य लुकेको छ। नक्कली लगइन पेज छिराउन छोटो लिंक धेरै प्रयोग हुन्छ।',
+    });
+  }
+
+  // 10. Punycode trick.
   if (hasPunycode(host)) {
     reasons.push({
       id: 'punycode',
@@ -338,7 +412,7 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
     });
   }
 
-  // 7. Suspicious TLD.
+  // 11. Suspicious TLD.
   if (SUSPICIOUS_TLDS.has(tldOf(host))) {
     reasons.push({
       id: 'suspicious-tld',
@@ -348,7 +422,7 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
     });
   }
 
-  // 8. Excessive hyphens or subdomains.
+  // 12. Excessive hyphens or subdomains.
   const hyphenCount = (reg.match(/-/g) ?? []).length;
   if (hyphenCount >= 3) {
     reasons.push({
@@ -552,4 +626,64 @@ export function analyzePage(signals: PageSignals, brands: Brand[]): AnalysisResu
     reasons,
     checked,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Address-only check (pasted link — the page is never visited)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check a pasted link by its address alone. Returns null when the text is
+ * not a usable http(s) address. No login form or page text exists here, so
+ * the verdict rests on the domain checks only, and a clean address is
+ * reported as gray with an explicit "address only" note — never green
+ * beyond the official-domain case, and never a claim about the page.
+ */
+export function analyzeUrl(rawUrl: string, brands: Brand[]): AnalysisResult | null {
+  const text = rawUrl.trim();
+  // A non-web scheme (ftp://, file://, ...) is not a checkable link.
+  // Note the order: prepending https:// to "ftp://x" would silently
+  // turn it into a different address, so reject other schemes first.
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(text) && !/^https?:\/\//i.test(text)) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+
+  const signals: PageSignals = {
+    url: parsed.href,
+    hostname: parsed.hostname.toLowerCase(),
+    isHttps: parsed.protocol === 'https:',
+    hasPasswordField: false,
+    hasOtpField: false,
+    hasPinField: false,
+    formActionHosts: [],
+    pageText: '',
+    title: '',
+    hasHiddenIframe: false,
+    rightClickDisabled: false,
+    pasteDisabled: false,
+    hasObfuscatedScript: false,
+  };
+
+  const result = analyzePage(signals, brands);
+  result.checked = [
+    'Only the address was checked — the page itself was not visited, so no login form or page text was seen',
+    ...result.checked,
+  ];
+
+  if (result.verdict === 'gray') {
+    result.reasons = [
+      {
+        id: 'url-only-gray',
+        severity: 'low',
+        en: 'This address shows no warning signs, but only the address was checked — the page itself was not visited. Only open it if you trust who sent it.',
+        ne: 'यो ठेगानामा कुनै चेतावनी संकेत देखिएन, तर ठेगाना मात्र जाँचिएको हो — पेज खोलिएको छैन। पठाउने व्यक्तिलाई विश्वास छ भने मात्र खोल्नुहोस्।',
+      },
+    ];
+  }
+  return result;
 }

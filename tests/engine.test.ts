@@ -5,7 +5,7 @@
 // are test strings only — never host look-alike login pages publicly.
 
 import { describe, expect, it } from 'vitest';
-import { analyzePage, levenshtein, normalizeConfusables, registrableDomain } from '../src/lib/engine';
+import { analyzePage, analyzeUrl, levenshtein, normalizeConfusables, registrableDomain } from '../src/lib/engine';
 import type { Brand, PageSignals } from '../src/lib/engine';
 import { verifiedBrands } from '../src/lib/registry';
 
@@ -92,6 +92,48 @@ describe('official domains go green', () => {
     );
     expect(r.verdict).toBe('green');
   });
+
+  it('imepay.com.np login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://imepay.com.np/login',
+        hostname: 'imepay.com.np',
+        hasPasswordField: true,
+        pageText: 'ime pay login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('ime-pay');
+  });
+
+  it('nicasiabank.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.nicasiabank.com/login',
+        hostname: 'www.nicasiabank.com',
+        hasPasswordField: true,
+        pageText: 'nic asia bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('nic-asia');
+  });
+
+  it('globalimebank.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.globalimebank.com/login',
+        hostname: 'www.globalimebank.com',
+        hasPasswordField: true,
+        pageText: 'global ime bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('global-ime');
+  });
 });
 
 describe('10 look-alike domains — all red', () => {
@@ -106,6 +148,9 @@ describe('10 look-alike domains — all red', () => {
     { host: 'nabilbank-login.com', note: 'brand + hyphen + "login"' },
     { host: 'nabil-bank.com', note: 'hyphenated brand name, wrong domain' },
     { host: 'paypa1-secure-login.com', note: 'digit substitution + "secure login"' },
+    { host: 'imepay-login.com', note: 'IME Pay + hyphen + "login"' },
+    { host: 'nicasia-bank.com', note: 'NIC Asia hyphenated, wrong domain' },
+    { host: 'globalime-secure.com', note: 'Global IME + hyphen + "secure"' },
   ];
 
   for (const { host, note } of lookalikes) {
@@ -259,4 +304,127 @@ describe('gray and yellow', () => {
     expect(r.verdict).toBe('gray');
     expect(r.brandId).toBeNull();
   });
+});
+
+describe('address-level checks', () => {
+  it('login page on a bare IP address is red', () => {
+    const r = analyzePage(
+      signals({
+        url: 'http://45.90.12.34/login',
+        hostname: '45.90.12.34',
+        isHttps: false,
+        hasPasswordField: true,
+        pageText: 'esewa login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('red');
+    expect(r.reasons.some((x) => x.id === 'ip-host')).toBe(true);
+  });
+
+  it('the @ trick is red (brand in userinfo, real site after @)', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://esewa.com.np@evil-login.xyz/login',
+        hostname: 'evil-login.xyz',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('red');
+    expect(r.reasons.some((x) => x.id === 'userinfo-trick')).toBe(true);
+  });
+
+  it('login page on an unusual port is at least yellow', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://example-shop.com:8443/login',
+        hostname: 'example-shop.com',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(['red', 'yellow']).toContain(r.verdict);
+    expect(r.reasons.some((x) => x.id === 'unusual-port')).toBe(true);
+  });
+
+  it('login page behind a URL shortener is at least yellow', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://bit.ly/3xYzAbC',
+        hostname: 'bit.ly',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(['red', 'yellow']).toContain(r.verdict);
+    expect(r.reasons.some((x) => x.id === 'url-shortener')).toBe(true);
+  });
+});
+
+describe('analyzeUrl — pasted links, address only', () => {
+  it('look-alike pasted link is red', () => {
+    const r = analyzeUrl('https://esewaa.com.np/login', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.verdict).toBe('red');
+  });
+
+  it('past link without a scheme still works', () => {
+    const r = analyzeUrl('esewaa.com.np/login', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.verdict).toBe('red');
+  });
+
+  it('official domain pasted is green', () => {
+    const r = analyzeUrl('https://esewa.com.np/login', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.verdict).toBe('green');
+  });
+
+  it('shortened link pasted is yellow', () => {
+    const r = analyzeUrl('https://bit.ly/3xYzAbC', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.verdict).toBe('yellow');
+    expect(r!.reasons.some((x) => x.id === 'url-shortener')).toBe(true);
+  });
+
+  it('clean unknown address is gray with the address-only note', () => {
+    const r = analyzeUrl('https://example.com/some-page', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.verdict).toBe('gray');
+    expect(r!.reasons.some((x) => x.id === 'url-only-gray')).toBe(true);
+    expect(r!.checked[0]).toContain('Only the address was checked');
+  });
+
+  it('garbage text returns null', () => {
+    expect(analyzeUrl('not a url at all !!!', BRANDS)).toBeNull();
+    expect(analyzeUrl('ftp://example.com/file', BRANDS)).toBeNull();
+  });
+});
+
+describe('false positives — real login pages stay gray', () => {
+  const legit: string[] = [
+    'https://github.com/login',
+    'https://www.facebook.com/login',
+    'https://www.chase.com/login',
+    'https://login.microsoftonline.com/',
+  ];
+  for (const url of legit) {
+    it(`${url} is not red`, () => {
+      const host = new URL(url).hostname;
+      const r = analyzePage(
+        signals({
+          url,
+          hostname: host,
+          hasPasswordField: true,
+          pageText: 'login enter your password',
+        }),
+        BRANDS,
+      );
+      expect(r.verdict).toBe('gray');
+    });
+  }
 });

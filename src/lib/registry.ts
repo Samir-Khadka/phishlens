@@ -15,12 +15,15 @@ import type { Brand } from './engine';
 
 import esewa from '../brands/esewa.json';
 import khalti from '../brands/khalti.json';
+import imePay from '../brands/ime-pay.json';
 import nabilBank from '../brands/nabil-bank.json';
+import nicAsia from '../brands/nic-asia.json';
+import globalIme from '../brands/global-ime.json';
 import google from '../brands/google.json';
 import paypal from '../brands/paypal.json';
 
 /** All bundled brands, in registry order. */
-export const REGISTRY: Brand[] = [esewa, khalti, nabilBank, google, paypal] as Brand[];
+export const REGISTRY: Brand[] = [esewa, khalti, imePay, nabilBank, nicAsia, globalIme, google, paypal] as Brand[];
 
 /** Only the entries whose official domains were verified against a source. */
 export function verifiedBrands(): Brand[] {

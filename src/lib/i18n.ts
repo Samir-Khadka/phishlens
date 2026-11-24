@@ -25,6 +25,11 @@ export interface UiStrings {
   privacyLink: string;
   languageLabel: string;
   noLoginForm: string;
+  linkCheckTitle: string;
+  linkCheckPlaceholder: string;
+  linkCheckButton: string;
+  linkCheckNote: string;
+  linkCheckInvalid: string;
 }
 
 export const STRINGS: Record<Lang, UiStrings> = {
@@ -49,6 +54,11 @@ export const STRINGS: Record<Lang, UiStrings> = {
     privacyLink: 'Privacy policy',
     languageLabel: 'नेपाली',
     noLoginForm: 'No login form on this page.',
+    linkCheckTitle: 'Check a link before you open it',
+    linkCheckPlaceholder: 'Paste a suspicious link…',
+    linkCheckButton: 'Check link',
+    linkCheckNote: 'Only the address is checked — the page is not visited.',
+    linkCheckInvalid: 'That does not look like a web address. It needs to start with http:// or https://',
   },
   ne: {
     appTagline: 'पासवर्ड टाइप गर्नु अघि, लगइन पेज किन नक्कली देखिन्छ भनेर देखाउँछ।',
@@ -71,6 +81,11 @@ export const STRINGS: Record<Lang, UiStrings> = {
     privacyLink: 'गोपनीयता नीति',
     languageLabel: 'English',
     noLoginForm: 'यो पेजमा कुनै लगइन फारम छैन।',
+    linkCheckTitle: 'खोल्नु अघि लिंक जाँच्नुहोस्',
+    linkCheckPlaceholder: 'शंकास्पद लिंक यहाँ टाँस्नुहोस्…',
+    linkCheckButton: 'लिंक जाँच्नुहोस्',
+    linkCheckNote: 'केवल ठेगाना मात्र जाँचिन्छ — पेज खोलिँदैन।',
+    linkCheckInvalid: 'यो वेब ठेगाना जस्तो देखिँदैन। http:// वा https:// बाट सुरु हुनुपर्छ।',
   },
 };
 

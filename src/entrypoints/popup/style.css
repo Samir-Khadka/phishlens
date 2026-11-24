@@ -49,5 +49,16 @@ h1 { margin: 0; font-size: 18px; line-height: 1.2; }
 .btn.primary { background: #1565c0; color: #fff; font-weight: 600; }
 .btn.danger-outline { border-color: #c62828; color: #c62828; }
 .report-done { font-size: 12px; color: #2e7d32; margin: 8px 0 0; }
+
+.link-check { margin-top: 16px; border-top: 1px solid #eee; padding-top: 10px; }
+.link-check h2 { font-size: 13px; margin: 0 0 6px; }
+.link-row { display: flex; gap: 6px; }
+.link-row input {
+  flex: 1; min-width: 0; border: 1px solid #ccc; border-radius: 8px;
+  padding: 8px 10px; font-size: 13px; font-family: ui-monospace, monospace;
+}
+.link-row .btn { padding: 8px 10px; white-space: nowrap; }
+.link-note { font-size: 11px; color: #777; margin: 6px 0 0; }
+
 .privacy { margin-top: 14px; font-size: 11px; color: #777; border-top: 1px solid #eee; padding-top: 8px; }
 .privacy p { margin: 0; }

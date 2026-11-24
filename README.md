@@ -80,13 +80,16 @@ v0.1 asks for **no host permissions, no browsing history, no cookies**. v0.2's o
 
 `src/brands/` holds one JSON file per brand: official domains, name variants in English and Nepali, logo hashes, form fingerprints. Contributors add brands through pull requests, and **each entry needs a source proving the official domains** (the brand's own site or app listing). Do not guess domains — a wrong entry marks the real site as fake or a fake as real. Entries with `"verified": false` are ignored by the engine.
 
-Starter set (verified Nov 2026 — see each file's `source` field):
+Verified set (verified Nov 2026 — see each file's `source` field):
 
 | Brand | Official domains |
 |---|---|
 | eSewa | esewa.com.np |
 | Khalti | khalti.com |
+| IME Pay | imepay.com.np |
 | Nabil Bank | nabilbank.com, nbank.nabilbank.com |
+| NIC Asia Bank | nicasiabank.com |
+| Global IME Bank | globalimebank.com |
 | Google | google.com, accounts.google.com |
 | PayPal | paypal.com |
 
@@ -104,11 +107,11 @@ npm run build        # .output/chrome-mv3
 npm run zip          # store-ready zip
 ```
 
-> **Note:** package installs are blocked in the sandbox this was written in, so `npm install` and the build have not been run here. The engine itself was verified directly: all 25 checks in `/tmp/check-engine.ts` pass against the real `src/lib/engine.ts` using Node 24's built-in type stripping. Run `npm test` on your own machine for the full Vitest suite.
+> **Note:** package installs are blocked in the sandbox this was written in, so `npm install` and the build have not been run here. The engine itself was verified directly: all 45 checks in `tests/check-engine.node.ts` pass against the real `src/lib/engine.ts` using Node 24's built-in type stripping. Run `npm test` on your own machine for the full Vitest suite.
 
 ## Testing
 
-- **Unit tests** (`tests/engine.test.ts`): 10 look-alike domain examples for the starter brands (all expected red), homoglyph/punycode, impersonation, cross-domain forms, no-HTTPS, Nepali urgency phrases (Devanagari + romanized), green on official domains, gray on unknown sites, unverified registry entries ignored.
+- **Unit tests** (`tests/engine.test.ts`): 13 look-alike domain examples (all expected red), homoglyph/punycode, impersonation, cross-domain forms, no-HTTPS, Nepali urgency phrases (Devanagari + romanized), green on official domains, gray on unknown sites, unverified registry entries ignored, address-level checks (bare IP host, the `@` trick, unusual port, URL shortener), pasted-link checks, and false-positive regression tests on real login pages (GitHub, Facebook, Chase, Microsoft).
 - **Local fixtures** (`tests/fixtures/`): a fake eSewa login page and a plain shop login page. Clearly labelled as test fixtures — **never host look-alike login pages publicly**, even as demos; they can be mistaken for real phishing pages and get your domain or repo flagged.
 - **False positives matter most.** Before launch, run the popup against the login pages of popular legitimate sites. If real sites get warnings, users will uninstall.
 - For real-world data, use published phishing URL feeds and analyse them by URL and saved signals — don't browse live phishing sites on your main computer.

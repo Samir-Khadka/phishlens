@@ -37,8 +37,11 @@ Shows why a login page looks fake, in plain Nepali or English, before you type y
 > signs were found.
 >
 > Built for Nepal first: verified Nepali wallets and banks (eSewa, Khalti,
-> Nabil Bank), with verdicts and explanations in natural Nepali, and
-> detection of scam phrases in Devanagari and Romanized Nepali.
+> IME Pay, Nabil Bank, NIC Asia Bank, Global IME Bank), with verdicts and
+> explanations in natural Nepali, and detection of scam phrases in
+> Devanagari and Romanized Nepali. You can also paste a suspicious link
+> into the popup and check it before opening it — only the address is
+> checked, the page is never visited.
 >
 > Private by design: every check runs on your device. No URLs, page text, or
 > anything you type ever leaves your browser. No account, no tracking, no ads.

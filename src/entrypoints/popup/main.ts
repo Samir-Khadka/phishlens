@@ -12,7 +12,7 @@
 // anywhere. The only outbound action is the optional, user-initiated
 // "Report this page", which stores a stripped URL locally.
 
-import { analyzePage } from '../../lib/engine';
+import { analyzePage, analyzeUrl } from '../../lib/engine';
 import type { PageSignals, Verdict } from '../../lib/engine';
 import { collectPageSignals } from '../../lib/collect';
 import { verifiedBrands } from '../../lib/registry';
@@ -41,6 +41,10 @@ function renderStrings(): void {
   ($('official-button') as HTMLButtonElement).textContent = s.officialSiteButton;
   ($('privacy-note') as HTMLElement).textContent = s.privacyNote;
   ($('privacy-link') as HTMLAnchorElement).textContent = s.privacyLink;
+  ($('linkcheck-title') as HTMLElement).textContent = s.linkCheckTitle;
+  ($('link-input') as HTMLInputElement).placeholder = s.linkCheckPlaceholder;
+  ($('link-button') as HTMLButtonElement).textContent = s.linkCheckButton;
+  ($('link-note') as HTMLElement).textContent = s.linkCheckNote;
   if (lastResult) renderResult(lastResult);
 }
 
@@ -88,11 +92,20 @@ function renderResult(result: ReturnType<typeof analyzePage>): void {
   officialButton.hidden = true;
   officialButton.onclick = null;
   const impersonated = result.reasons.some((r) => r.id === 'impersonation');
-  if (impersonated) {
-    // Find the impersonated brand from the page text the collector saved.
-    const mentioned = verifiedBrands().find((b) =>
-      (lastSignals?.pageText ?? '').includes(b.nameVariants[0] ?? b.id),
-    );
+  const domainImpersonated = result.reasons.some((r) =>
+    ['lookalike-domain', 'homoglyph-domain', 'brand-in-subdomain', 'brand-in-domain'].includes(r.id),
+  );
+  if (impersonated || domainImpersonated) {
+    // Find the impersonated brand from the page text the collector saved,
+    // falling back to the hostname (covers the pasted-link check, which
+    // has no page text).
+    const mentioned =
+      verifiedBrands().find((b) =>
+        (lastSignals?.pageText ?? '').includes(b.nameVariants[0] ?? b.id),
+      ) ??
+      verifiedBrands().find((b) =>
+        (lastSignals?.hostname ?? '').includes(b.nameVariants[0] ?? b.id),
+      );
     if (mentioned) {
       officialButton.hidden = false;
       officialButton.onclick = () => {
@@ -179,6 +192,58 @@ document.addEventListener('DOMContentLoaded', async () => {
     const done = $('report-done');
     done.hidden = false;
     done.textContent = getStrings(lang).reportDone;
+  });
+  // Paste-a-link check: address only, the page is never visited. The
+  // toolbar badge keeps the current page's verdict, not the pasted link's.
+  const checkLink = (): void => {
+    const input = $('link-input') as HTMLInputElement;
+    const raw = input.value.trim();
+    if (!raw) return;
+    const result = analyzeUrl(raw, verifiedBrands());
+    if (!result) {
+      renderResult({
+        verdict: 'gray',
+        score: 0,
+        brandId: null,
+        officialDomain: null,
+        reasons: [
+          {
+            id: 'invalid-url',
+            severity: 'low',
+            en: getStrings(lang).linkCheckInvalid,
+            ne: getStrings(lang).linkCheckInvalid,
+          },
+        ],
+        checked: [],
+      });
+      return;
+    }
+    try {
+      const parsed = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`);
+      $('domain').textContent = parsed.hostname;
+      lastSignals = {
+        url: parsed.href,
+        hostname: parsed.hostname.toLowerCase(),
+        isHttps: parsed.protocol === 'https:',
+        hasPasswordField: false,
+        hasOtpField: false,
+        hasPinField: false,
+        formActionHosts: [],
+        pageText: '',
+        title: '',
+        hasHiddenIframe: false,
+        rightClickDisabled: false,
+        pasteDisabled: false,
+        hasObfuscatedScript: false,
+      };
+    } catch {
+      // analyzeUrl already succeeded, so this cannot happen.
+    }
+    renderResult(result);
+  };
+  $('link-button').addEventListener('click', checkLink);
+  $('link-input').addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key === 'Enter') checkLink();
   });
   // Auto-run on open: the user clicked the icon to X-ray the page.
   await runXray();
