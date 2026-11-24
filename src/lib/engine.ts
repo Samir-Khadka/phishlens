@@ -67,6 +67,12 @@ export interface Reason {
   ne: string;
 }
 
+/** One line of the "what was checked" list, in both languages. */
+export interface CheckedItem {
+  en: string;
+  ne: string;
+}
+
 export interface AnalysisResult {
   verdict: Verdict;
   score: number;
@@ -75,7 +81,7 @@ export interface AnalysisResult {
   officialDomain: string | null;
   reasons: Reason[];
   /** Plain-language list of what was checked, for the "why this verdict" view. */
-  checked: string[];
+  checked: CheckedItem[];
 }
 
 const WEIGHTS: Record<Severity, number> = { high: 3, medium: 2, low: 1 };
@@ -326,8 +332,16 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
     // 3. Brand name inside the domain itself: esewa-login.com,
     //    paypa1-secure-login.com, esewa.com (wrong ending). The check runs
     //    on the confusable-normalised domain so digit/letter substitutions
-    //    (paypa1 -> paypal) are caught too.
-    if (token.length >= 4 && normalizeConfusables(reg).includes(token)) {
+    //    (paypa1 -> paypal) are caught too. Short tokens (e.g. "nmb") only
+    //    match as a whole hyphen-separated part — "nmb-login.com" is a
+    //    look-alike, but "anmb.com" is not — while longer tokens match as
+    //    a substring, as before.
+    const normReg = normalizeConfusables(reg);
+    const domainParts = normReg.split(/[.\\-]/);
+    if (
+      (token.length >= 4 && normReg.includes(token)) ||
+      domainParts.includes(token)
+    ) {
       reasons.push({
         id: 'brand-in-domain',
         severity: 'high',
@@ -347,7 +361,9 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
     }
 
     // 5. Brand name in the path of an unrelated domain: evil.com/esewa/login
-    if (path.includes(token) && token.length >= 4) {
+    //    Same short-token rule as brand-in-domain: a whole path segment.
+    const pathParts = path.split(/[^a-z0-9]+/).filter(Boolean);
+    if ((token.length >= 4 && path.includes(token)) || pathParts.includes(token)) {
       reasons.push({
         id: 'brand-in-path',
         severity: 'medium',
@@ -556,23 +572,40 @@ export function analyzePage(signals: PageSignals, brands: Brand[]): AnalysisResu
     brands.find((b) => b.verified && isOfficialDomain(host, b)) ?? null;
 
   const reasons: Reason[] = [];
-  const checked: string[] = [];
+  const checked: CheckedItem[] = [];
 
-  checked.push('Domain compared against the verified brand registry');
+  checked.push({
+    en: 'Domain compared against the verified brand registry',
+    ne: 'डोमेन प्रमाणित ब्रान्ड रजिस्ट्रीसँग तुलना गरियो',
+  });
   if (officialBrand) {
-    checked.push(`Matched official domain of ${officialBrand.name}`);
+    checked.push({
+      en: `Matched official domain of ${officialBrand.name}`,
+      ne: `${officialBrand.nameNe} को आधिकारिक डोमेनसँग मिल्यो`,
+    });
   }
 
   // Domain checks always run (except the look-alike family is skipped when
   // the page IS the official domain — handled inside domainChecks).
   reasons.push(...domainChecks(signals.hostname, signals.url, brands));
-  checked.push('Look-alike, homoglyph, subdomain and path tricks checked');
+  checked.push({
+    en: 'Look-alike, homoglyph, subdomain and path tricks checked',
+    ne: 'उस्तै देखिने, होमोग्लिफ, सबडोमेन र पाथका छलहरू जाँचिए',
+  });
 
   const hasLoginField =
     signals.hasPasswordField || signals.hasOtpField || signals.hasPinField;
-  if (hasLoginField) checked.push('Login form found on the page');
+  if (hasLoginField) {
+    checked.push({
+      en: 'Login form found on the page',
+      ne: 'पेजमा लगइन फारम भेटियो',
+    });
+  }
   reasons.push(...pageChecks(signals, brands, officialBrand));
-  checked.push('Form destination, HTTPS, urgency language and page tricks checked');
+  checked.push({
+    en: 'Form destination, HTTPS, urgency language and page tricks checked',
+    ne: 'फारमको गन्तव्य, HTTPS, दबाब दिने भाषा र पेजका छलहरू जाँचिए',
+  });
 
   const score = reasons.reduce((sum, r) => sum + WEIGHTS[r.severity], 0);
   const hasImpersonation = reasons.some((r) => r.id === 'impersonation');
@@ -671,7 +704,10 @@ export function analyzeUrl(rawUrl: string, brands: Brand[]): AnalysisResult | nu
 
   const result = analyzePage(signals, brands);
   result.checked = [
-    'Only the address was checked — the page itself was not visited, so no login form or page text was seen',
+    {
+      en: 'Only the address was checked — the page itself was not visited, so no login form or page text was seen',
+      ne: 'ठेगाना मात्र जाँचियो — पेज खोलिएको छैन, त्यसैले कुनै लगइन फारम वा पेजको पाठ हेरिएन',
+    },
     ...result.checked,
   ];
 

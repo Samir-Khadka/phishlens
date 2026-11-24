@@ -3,6 +3,32 @@
 All notable changes to Sachet are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] — 2026-11-24
+
+### Added
+
+- **Automatic protection (opt-in, off by default)**: turn it on in the
+  popup and Sachet checks each finished page load itself, updates the
+  toolbar badge, and warns once per tab with a notification when a page
+  looks fake. Turning it on asks the browser for optional host access
+  (`*://*/*`) via the browser's own permission prompt; turning it off
+  gives that access back. Click-to-scan still needs no host permissions.
+- **Bilingual "what was checked" list**: every line now has English and
+  Nepali text, matching the verdict reasons.
+- **Three more verified Nepali brands**: FonePay (fonepay.com),
+  ConnectIPS (connectips.com), NMB Bank (nmb.com.np, internet banking at
+  web.nmb.com.np). Registry is now 11 brands.
+- Look-alike test list grew from 13 to 16 domains.
+
+### Changed
+
+- `notifications` permission added (red-page warnings in auto-protection
+  only); `optional_host_permissions` added for the opt-in mode.
+- Short brand tokens (e.g. "nmb") now match only as a whole
+  hyphen-separated domain part — `nmb-login.com` is flagged red, but
+  `anmb.com` is not.
+- Standalone engine check now 53 checks.
+
 ## [0.2.0] — 2026-11-24
 
 ### Added

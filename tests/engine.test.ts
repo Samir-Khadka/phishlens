@@ -428,3 +428,101 @@ describe('false positives — real login pages stay gray', () => {
     });
   }
 });
+
+describe('new brands in v0.3 — FonePay, ConnectIPS, NMB', () => {
+  it('fonepay.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://fonepay.com/login',
+        hostname: 'fonepay.com',
+        hasPasswordField: true,
+        pageText: 'fonepay login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('fonepay');
+  });
+
+  it('connectips.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.connectips.com/login',
+        hostname: 'www.connectips.com',
+        hasPasswordField: true,
+        pageText: 'connectips login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('connectips');
+  });
+
+  it('web.nmb.com.np — NMB internet banking — is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://web.nmb.com.np/login',
+        hostname: 'web.nmb.com.np',
+        hasPasswordField: true,
+        pageText: 'nmb bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('nmb');
+  });
+
+  for (const host of ['fonepay-login.com', 'connectips-secure.com', 'nmb-login.com']) {
+    it(`${host} is red`, () => {
+      const r = analyzePage(
+        signals({
+          url: `https://${host}/login`,
+          hostname: host,
+          hasPasswordField: true,
+          pageText: 'login',
+        }),
+        BRANDS,
+      );
+      expect(r.verdict).toBe('red');
+    });
+  }
+
+  it('anmb.com is NOT flagged — short tokens only match whole parts', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://anmb.com/login',
+        hostname: 'anmb.com',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('gray');
+  });
+});
+
+describe('checked list is bilingual', () => {
+  it('every checked item has English and Nepali text', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://esewa.com.np/login',
+        hostname: 'esewa.com.np',
+        hasPasswordField: true,
+        pageText: 'esewa login',
+      }),
+      BRANDS,
+    );
+    expect(r.checked.length).toBeGreaterThan(0);
+    for (const item of r.checked) {
+      expect(item.en.length).toBeGreaterThan(0);
+      expect(item.ne.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('analyzeUrl first item is the address-only note, in both languages', () => {
+    const r = analyzeUrl('https://example.com/some-page', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.checked[0]!.en).toContain('Only the address was checked');
+    expect(r!.checked[0]!.ne.length).toBeGreaterThan(0);
+  });
+});

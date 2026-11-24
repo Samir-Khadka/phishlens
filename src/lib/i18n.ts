@@ -30,6 +30,9 @@ export interface UiStrings {
   linkCheckButton: string;
   linkCheckNote: string;
   linkCheckInvalid: string;
+  autoProtectLabel: string;
+  autoProtectNote: string;
+  autoProtectDenied: string;
 }
 
 export const STRINGS: Record<Lang, UiStrings> = {
@@ -59,6 +62,9 @@ export const STRINGS: Record<Lang, UiStrings> = {
     linkCheckButton: 'Check link',
     linkCheckNote: 'Only the address is checked — the page is not visited.',
     linkCheckInvalid: 'That does not look like a web address. It needs to start with http:// or https://',
+    autoProtectLabel: 'Protect me automatically',
+    autoProtectNote: 'When on, Sachet checks login pages by itself and warns you. It asks first for permission to read pages.',
+    autoProtectDenied: 'Permission not given — automatic protection stays off. You can still X-ray pages by clicking the icon.',
   },
   ne: {
     appTagline: 'पासवर्ड टाइप गर्नु अघि, लगइन पेज किन नक्कली देखिन्छ भनेर देखाउँछ।',
@@ -86,6 +92,9 @@ export const STRINGS: Record<Lang, UiStrings> = {
     linkCheckButton: 'लिंक जाँच्नुहोस्',
     linkCheckNote: 'केवल ठेगाना मात्र जाँचिन्छ — पेज खोलिँदैन।',
     linkCheckInvalid: 'यो वेब ठेगाना जस्तो देखिँदैन। http:// वा https:// बाट सुरु हुनुपर्छ।',
+    autoProtectLabel: 'मलाई स्वचालित रूपमा सुरक्षित गर्नुहोस्',
+    autoProtectNote: 'अन गर्दा Sachet ले आफैं लगइन पेजहरू जाँच्छ र चेतावनी दिन्छ। त्यसअघि पेज पढ्न अनुमति मागिन्छ।',
+    autoProtectDenied: 'अनुमति दिइएन — स्वचालित सुरक्षा बन्द नै रहन्छ। तपाईंले आइकन क्लिक गरेर पेज जाँच्न सक्नुहुन्छ।',
   },
 };
 

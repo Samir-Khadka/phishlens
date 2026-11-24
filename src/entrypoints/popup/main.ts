@@ -45,6 +45,8 @@ function renderStrings(): void {
   ($('link-input') as HTMLInputElement).placeholder = s.linkCheckPlaceholder;
   ($('link-button') as HTMLButtonElement).textContent = s.linkCheckButton;
   ($('link-note') as HTMLElement).textContent = s.linkCheckNote;
+  ($('auto-label') as HTMLElement).textContent = s.autoProtectLabel;
+  ($('auto-note') as HTMLElement).textContent = s.autoProtectNote;
   if (lastResult) renderResult(lastResult);
 }
 
@@ -83,7 +85,7 @@ function renderResult(result: ReturnType<typeof analyzePage>): void {
   checkedList.innerHTML = '';
   for (const item of result.checked) {
     const li = document.createElement('li');
-    li.textContent = item;
+    li.textContent = lang === 'ne' ? item.ne : item.en;
     checkedList.appendChild(li);
   }
 
@@ -244,6 +246,42 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('link-button').addEventListener('click', checkLink);
   $('link-input').addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key === 'Enter') checkLink();
+  });
+
+  // Automatic protection: off by default. Turning it on asks the browser
+  // for optional host access; turning it off gives that access back.
+  const autoToggle = $('auto-toggle') as HTMLInputElement;
+  const autoDenied = $('auto-denied') as HTMLElement;
+  const syncAutoToggle = async (): Promise<void> => {
+    const stored = await chrome.storage.local.get('autoProtect');
+    let on = stored.autoProtect === true;
+    if (on) {
+      on = await chrome.permissions.contains({ origins: ['*://*/*'] });
+      if (!on) await chrome.storage.local.set({ autoProtect: false });
+    }
+    autoToggle.checked = on;
+  };
+  await syncAutoToggle();
+  autoToggle.addEventListener('change', async () => {
+    autoDenied.hidden = true;
+    if (autoToggle.checked) {
+      const granted = await chrome.permissions.request({ origins: ['*://*/*'] });
+      if (granted) {
+        await chrome.storage.local.set({ autoProtect: true });
+      } else {
+        autoToggle.checked = false;
+        autoDenied.hidden = false;
+        autoDenied.textContent = getStrings(lang).autoProtectDenied;
+      }
+    } else {
+      await chrome.storage.local.set({ autoProtect: false });
+      try {
+        await chrome.permissions.remove({ origins: ['*://*/*'] });
+      } catch {
+        // Some browsers keep the grant until the user removes it from the
+        // extension page; the stored flag already reads as off.
+      }
+    }
   });
   // Auto-run on open: the user clicked the icon to X-ray the page.
   await runXray();

@@ -25,10 +25,13 @@ The extension makes **no network requests at all** except when you choose to cli
 | Permission | Purpose |
 |---|---|
 | `activeTab` | Read the page you are looking at, only when you click the icon to X-ray it. |
-| `storage` | Remember your language choice (English/Nepali) and any reports you choose to save, on your device only. |
-| `scripting` | Run the one-shot page check in the active tab when you click the icon. |
+| `storage` | Remember your language choice (English/Nepali), the automatic-protection toggle, and any reports you choose to save, on your device only. |
+| `scripting` | Run the one-shot page check in the active tab when you click the icon — or when a page finishes loading, only if you turned on automatic protection. |
+| `notifications` | Warn you once per tab when automatic protection finds a page that looks fake. Only used in automatic protection, never otherwise. |
 
-Sachet does **not** request access to your browsing history, cookies, or all websites. An optional automatic-protection mode may ask for broader site access in a future version, only if you turn it on.
+**Optional host access** (`*://*/*`) is requested only when you turn on automatic protection in the popup, through the browser's own permission prompt. Turning automatic protection off gives that access back. Without it, Sachet asks for no host permissions at all.
+
+Sachet does **not** request access to your browsing history, cookies, or all websites by default.
 
 ## Reports
 

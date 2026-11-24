@@ -36,12 +36,15 @@ Shows why a login page looks fake, in plain Nepali or English, before you type y
 > site is "safe": phishing pages can pass checks, so green means no warning
 > signs were found.
 >
-> Built for Nepal first: verified Nepali wallets and banks (eSewa, Khalti,
-> IME Pay, Nabil Bank, NIC Asia Bank, Global IME Bank), with verdicts and
+> Built for Nepal first: verified Nepali wallets, banks and payment
+> systems (eSewa, Khalti, IME Pay, FonePay, ConnectIPS, Nabil Bank,
+> NIC Asia Bank, Global IME Bank, NMB Bank), with verdicts and
 > explanations in natural Nepali, and detection of scam phrases in
 > Devanagari and Romanized Nepali. You can also paste a suspicious link
 > into the popup and check it before opening it — only the address is
-> checked, the page is never visited.
+> checked, the page is never visited. Automatic protection is available
+> as an opt-in: turn it on and Sachet checks login pages by itself and
+> warns you — it asks first for permission to read pages.
 >
 > Private by design: every check runs on your device. No URLs, page text, or
 > anything you type ever leaves your browser. No account, no tracking, no ads.

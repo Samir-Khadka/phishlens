@@ -14,9 +14,12 @@ const BRANDS = [
   { id: 'esewa', name: 'eSewa', nameNe: 'ईसेवा', officialDomains: ['esewa.com.np'], nameVariants: ['esewa', 'e-sewa', 'e sewa', 'ईसेवा'], verified: true, source: 'test' },
   { id: 'khalti', name: 'Khalti', nameNe: 'खल्ती', officialDomains: ['khalti.com'], nameVariants: ['khalti', 'खल्ती'], verified: true, source: 'test' },
   { id: 'ime-pay', name: 'IME Pay', nameNe: 'आईएमई पे', officialDomains: ['imepay.com.np'], nameVariants: ['imepay', 'ime pay', 'आईएमई पे'], verified: true, source: 'test' },
+  { id: 'fonepay', name: 'FonePay', nameNe: 'फोनपे', officialDomains: ['fonepay.com'], nameVariants: ['fonepay', 'fone pay', 'फोनपे'], verified: true, source: 'test' },
+  { id: 'connectips', name: 'ConnectIPS', nameNe: 'कनेक्ट आईपीएस', officialDomains: ['connectips.com'], nameVariants: ['connectips', 'connect ips', 'कनेक्ट आईपीएस'], verified: true, source: 'test' },
   { id: 'nabil-bank', name: 'Nabil Bank', nameNe: 'नबिल बैंक', officialDomains: ['nabilbank.com', 'nbank.nabilbank.com'], nameVariants: ['nabil', 'nabil bank', 'nbank', 'नबिल'], verified: true, source: 'test' },
   { id: 'nic-asia', name: 'NIC Asia Bank', nameNe: 'एन आई सी एशिया बैंक', officialDomains: ['nicasiabank.com'], nameVariants: ['nicasia', 'nic asia', 'nic asia bank', 'एन आई सी एशिया'], verified: true, source: 'test' },
   { id: 'global-ime', name: 'Global IME Bank', nameNe: 'ग्लोबल आईएमई बैंक', officialDomains: ['globalimebank.com'], nameVariants: ['globalime', 'global ime', 'global ime bank', 'ग्लोबल आईएमई'], verified: true, source: 'test' },
+  { id: 'nmb', name: 'NMB Bank', nameNe: 'एनएमबी बैंक', officialDomains: ['nmb.com.np'], nameVariants: ['nmb', 'nmb bank', 'एनएमबी'], verified: true, source: 'test' },
   { id: 'google', name: 'Google', nameNe: 'गुगल', officialDomains: ['google.com', 'accounts.google.com'], nameVariants: ['google', 'gmail', 'गुगल'], verified: true, source: 'test' },
   { id: 'paypal', name: 'PayPal', nameNe: 'पेपल', officialDomains: ['paypal.com'], nameVariants: ['paypal', 'पेपल'], verified: true, source: 'test' },
 ];
@@ -177,7 +180,41 @@ check('analyzeUrl: clean unknown address is gray with the address-only note', ()
   assert.ok(r);
   assert.equal(r.verdict, 'gray');
   assert.ok(r.reasons.some((x) => x.id === 'url-only-gray'));
-  assert.ok(r.checked[0].includes('Only the address was checked'));
+  assert.ok(r.checked[0].en.includes('Only the address was checked'));
+  assert.ok(r.checked[0].ne.length > 0);
+});
+check('checked list is bilingual', () => {
+  const r = analyzePage(sig({ url: 'https://esewa.com.np/login', hostname: 'esewa.com.np', hasPasswordField: true, pageText: 'esewa login' }), BRANDS);
+  assert.ok(r.checked.length > 0);
+  for (const item of r.checked) {
+    assert.ok(item.en.length > 0);
+    assert.ok(item.ne.length > 0);
+  }
+});
+check('fonepay.com login is green', () => {
+  const r = analyzePage(sig({ url: 'https://fonepay.com/login', hostname: 'fonepay.com', hasPasswordField: true, pageText: 'fonepay login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'fonepay');
+});
+check('connectips.com login is green', () => {
+  const r = analyzePage(sig({ url: 'https://www.connectips.com/login', hostname: 'www.connectips.com', hasPasswordField: true, pageText: 'connectips login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'connectips');
+});
+check('web.nmb.com.np — NMB internet banking — is green', () => {
+  const r = analyzePage(sig({ url: 'https://web.nmb.com.np/login', hostname: 'web.nmb.com.np', hasPasswordField: true, pageText: 'nmb bank login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'nmb');
+});
+for (const host of ['fonepay-login.com', 'connectips-secure.com', 'nmb-login.com']) {
+  check(`new-brand look-alike ${host} is red`, () => {
+    const r = analyzePage(sig({ url: `https://${host}/login`, hostname: host, hasPasswordField: true, pageText: 'login' }), BRANDS);
+    assert.equal(r.verdict, 'red');
+  });
+}
+check('anmb.com is NOT flagged — short tokens only match whole parts', () => {
+  const r = analyzePage(sig({ url: 'https://anmb.com/login', hostname: 'anmb.com', hasPasswordField: true, pageText: 'login' }), BRANDS);
+  assert.equal(r.verdict, 'gray');
 });
 check('analyzeUrl: garbage text returns null', () => {
   assert.equal(analyzeUrl('not a url at all !!!', BRANDS), null);

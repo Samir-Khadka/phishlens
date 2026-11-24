@@ -66,10 +66,15 @@ sites are the most important thing to catch before submission.
 
 - Click **Submit for review**. First submissions from a new developer
   account usually take a few days; it can take longer.
-- Google may ask for a justification of the `scripting` permission and a
-  video or extra screenshots showing the extension working. The answer is
+- Google may ask for a justification of the `scripting` permission, the
+  optional host access, and the `notifications` permission, and a video
+  or extra screenshots showing the extension working. The answers are
   in the README ("Permissions") and `PRIVACY.md`: scripting runs the
-  one-shot page check only when the user clicks the icon.
+  one-shot page check only when the user clicks the icon (or when a page
+  finishes loading, only in the opt-in automatic-protection mode);
+  optional host access is requested only when the user turns that mode
+  on, through the browser's own prompt; notifications warn once per tab
+  about a red page, only in that mode.
 - Common rejection reasons and how this listing avoids them:
   - **Unnecessary permissions** — we ask for `activeTab`, `storage`,
     `scripting` only; no host permissions, no history, no cookies.
