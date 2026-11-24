@@ -33,6 +33,13 @@ export interface UiStrings {
   autoProtectLabel: string;
   autoProtectNote: string;
   autoProtectDenied: string;
+  reportsTitle: string;
+  reportsEmpty: string;
+  reportsClear: string;
+  reportVerdictRed: string;
+  reportVerdictYellow: string;
+  reportVerdictGreen: string;
+  reportVerdictGray: string;
 }
 
 export const STRINGS: Record<Lang, UiStrings> = {
@@ -65,6 +72,13 @@ export const STRINGS: Record<Lang, UiStrings> = {
     autoProtectLabel: 'Protect me automatically',
     autoProtectNote: 'When on, Sachet checks login pages by itself and warns you. It asks first for permission to read pages.',
     autoProtectDenied: 'Permission not given — automatic protection stays off. You can still X-ray pages by clicking the icon.',
+    reportsTitle: 'My reports',
+    reportsEmpty: 'No reports yet. When you report a page, it appears here.',
+    reportsClear: 'Clear all reports',
+    reportVerdictRed: 'Fake',
+    reportVerdictYellow: 'Suspicious',
+    reportVerdictGreen: 'No warning signs',
+    reportVerdictGray: 'No verdict',
   },
   ne: {
     appTagline: 'पासवर्ड टाइप गर्नु अघि, लगइन पेज किन नक्कली देखिन्छ भनेर देखाउँछ।',
@@ -95,6 +109,13 @@ export const STRINGS: Record<Lang, UiStrings> = {
     autoProtectLabel: 'मलाई स्वचालित रूपमा सुरक्षित गर्नुहोस्',
     autoProtectNote: 'अन गर्दा Sachet ले आफैं लगइन पेजहरू जाँच्छ र चेतावनी दिन्छ। त्यसअघि पेज पढ्न अनुमति मागिन्छ।',
     autoProtectDenied: 'अनुमति दिइएन — स्वचालित सुरक्षा बन्द नै रहन्छ। तपाईंले आइकन क्लिक गरेर पेज जाँच्न सक्नुहुन्छ।',
+    reportsTitle: 'मेरा रिपोर्टहरू',
+    reportsEmpty: 'अहिलेसम्म कुनै रिपोर्ट छैन। तपाईंले पेज रिपोर्ट गर्दा यहाँ देखिन्छ।',
+    reportsClear: 'सबै रिपोर्टहरू मेट्नुहोस्',
+    reportVerdictRed: 'नक्कली',
+    reportVerdictYellow: 'शंकास्पद',
+    reportVerdictGreen: 'कुनै चेतावनी छैन',
+    reportVerdictGray: 'कुनै निष्कर्ष छैन',
   },
 };
 

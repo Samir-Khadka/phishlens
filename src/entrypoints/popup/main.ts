@@ -47,6 +47,9 @@ function renderStrings(): void {
   ($('link-note') as HTMLElement).textContent = s.linkCheckNote;
   ($('auto-label') as HTMLElement).textContent = s.autoProtectLabel;
   ($('auto-note') as HTMLElement).textContent = s.autoProtectNote;
+  ($('reports-title') as HTMLElement).textContent = s.reportsTitle;
+  ($('reports-empty') as HTMLElement).textContent = s.reportsEmpty;
+  ($('reports-clear') as HTMLButtonElement).textContent = s.reportsClear;
   if (lastResult) renderResult(lastResult);
 }
 
@@ -173,14 +176,60 @@ async function runXray(): Promise<void> {
   }
 }
 
+interface SavedReport {
+  url: string;
+  hostname: string;
+  verdict: 'red' | 'yellow' | 'green' | 'gray';
+  reasons: string[];
+  reportedAt: string;
+}
+
+/** Show the reports the user saved on this device, newest first. */
+async function renderReports(): Promise<void> {
+  const s = getStrings(lang);
+  const response = (await chrome.runtime.sendMessage({
+    type: 'phishlens:get-reports',
+  })) as { reports?: SavedReport[] };
+  const reports = (response?.reports ?? []).slice().reverse();
+  const list = $('reports-list');
+  const empty = $('reports-empty');
+  const clearButton = $('reports-clear') as HTMLButtonElement;
+  list.innerHTML = '';
+  empty.hidden = reports.length > 0;
+  clearButton.hidden = reports.length === 0;
+  const verdictWord: Record<SavedReport['verdict'], string> = {
+    red: s.reportVerdictRed,
+    yellow: s.reportVerdictYellow,
+    green: s.reportVerdictGreen,
+    gray: s.reportVerdictGray,
+  };
+  for (const report of reports) {
+    const li = document.createElement('li');
+    const host = document.createElement('span');
+    host.className = 'host';
+    host.textContent = report.hostname;
+    const chip = document.createElement('span');
+    chip.className = `report-chip ${report.verdict}`;
+    const date = new Date(report.reportedAt).toLocaleDateString(undefined, {
+      day: 'numeric',
+      month: 'short',
+    });
+    chip.textContent = `${verdictWord[report.verdict]} · ${date}`;
+    li.append(host, chip);
+    list.appendChild(li);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   lang = await loadLang();
   renderStrings();
+  await renderReports();
   $('xray-button').addEventListener('click', () => void runXray());
   $('lang-toggle').addEventListener('click', async () => {
     lang = lang === 'en' ? 'ne' : 'en';
     await chrome.storage.local.set({ lang });
     renderStrings();
+    await renderReports();
   });
   $('report-button').addEventListener('click', async () => {
     if (!lastSignals || !lastResult) return;
@@ -194,6 +243,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const done = $('report-done');
     done.hidden = false;
     done.textContent = getStrings(lang).reportDone;
+    await renderReports();
+  });
+  $('reports-clear').addEventListener('click', async () => {
+    await chrome.runtime.sendMessage({ type: 'phishlens:clear-reports' });
+    await renderReports();
   });
   // Paste-a-link check: address only, the page is never visited. The
   // toolbar badge keeps the current page's verdict, not the pasted link's.

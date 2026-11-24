@@ -149,6 +149,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
   }
 
+  if (message?.type === 'phishlens:get-reports') {
+    void chrome.storage.local.get('reports').then((stored) => {
+      sendResponse({ reports: (stored.reports as Report[] | undefined) ?? [] });
+    });
+    return true;
+  }
+
+  if (message?.type === 'phishlens:clear-reports') {
+    void chrome.storage.local.set({ reports: [] }).then(() => {
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
   return false;
 });
 

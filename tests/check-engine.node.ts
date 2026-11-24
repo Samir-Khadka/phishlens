@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import {
   analyzePage,
   analyzeUrl,
+  decodePunycodeHostname,
+  decodePunycodeLabel,
   levenshtein,
   normalizeConfusables,
   registrableDomain,
@@ -20,6 +22,9 @@ const BRANDS = [
   { id: 'nic-asia', name: 'NIC Asia Bank', nameNe: 'एन आई सी एशिया बैंक', officialDomains: ['nicasiabank.com'], nameVariants: ['nicasia', 'nic asia', 'nic asia bank', 'एन आई सी एशिया'], verified: true, source: 'test' },
   { id: 'global-ime', name: 'Global IME Bank', nameNe: 'ग्लोबल आईएमई बैंक', officialDomains: ['globalimebank.com'], nameVariants: ['globalime', 'global ime', 'global ime bank', 'ग्लोबल आईएमई'], verified: true, source: 'test' },
   { id: 'nmb', name: 'NMB Bank', nameNe: 'एनएमबी बैंक', officialDomains: ['nmb.com.np'], nameVariants: ['nmb', 'nmb bank', 'एनएमबी'], verified: true, source: 'test' },
+  { id: 'siddhartha', name: 'Siddhartha Bank', nameNe: 'सिद्धार्थ बैंक', officialDomains: ['siddharthabank.com'], nameVariants: ['siddhartha', 'siddhartha bank', 'सिद्धार्थ'], verified: true, source: 'test' },
+  { id: 'prabhu', name: 'Prabhu Bank', nameNe: 'प्रभु बैंक', officialDomains: ['prabhubank.com'], nameVariants: ['prabhu', 'prabhu bank', 'प्रभु'], verified: true, source: 'test' },
+  { id: 'rbb', name: 'Rastriya Banijya Bank', nameNe: 'राष्ट्रिय वाणिज्य बैंक', officialDomains: ['rbb.com.np'], nameVariants: ['rbb', 'rastriya banijya', 'राष्ट्रिय वाणिज्य बैंक'], verified: true, source: 'test' },
   { id: 'google', name: 'Google', nameNe: 'गुगल', officialDomains: ['google.com', 'accounts.google.com'], nameVariants: ['google', 'gmail', 'गुगल'], verified: true, source: 'test' },
   { id: 'paypal', name: 'PayPal', nameNe: 'पेपल', officialDomains: ['paypal.com'], nameVariants: ['paypal', 'पेपल'], verified: true, source: 'test' },
 ];
@@ -214,6 +219,53 @@ for (const host of ['fonepay-login.com', 'connectips-secure.com', 'nmb-login.com
 }
 check('anmb.com is NOT flagged — short tokens only match whole parts', () => {
   const r = analyzePage(sig({ url: 'https://anmb.com/login', hostname: 'anmb.com', hasPasswordField: true, pageText: 'login' }), BRANDS);
+  assert.equal(r.verdict, 'gray');
+});
+check('punycode decodes known labels', () => {
+  assert.equal(decodePunycodeLabel('xn--bcher-kva'), 'bücher');
+  assert.equal(decodePunycodeLabel('xn--n3h'), '☃');
+  const decoded = decodePunycodeLabel('xn--sewa-u4d');
+  assert.ok(decoded);
+  assert.equal(decoded.codePointAt(0), 0x0435); // Cyrillic е
+  assert.equal(decoded.slice(1), 'sewa');
+  assert.equal(decodePunycodeLabel('esewa'), null);
+  assert.equal(decodePunycodeLabel('xn--!!'), null);
+  assert.equal(decodePunycodeHostname('xn--bcher-kva.ch'), 'bücher.ch');
+  assert.equal(decodePunycodeHostname('www.esewa.com.np'), 'www.esewa.com.np');
+});
+check('Cyrillic е esewa hidden behind punycode is red', () => {
+  const r = analyzePage(sig({ url: 'https://xn--sewa-u4d.com.np/login', hostname: 'xn--sewa-u4d.com.np', hasPasswordField: true, pageText: 'login' }), BRANDS);
+  assert.equal(r.verdict, 'red');
+  assert.ok(r.reasons.some((x) => x.id === 'homoglyph-domain'));
+});
+check('punycode page lists the decoding in what was checked', () => {
+  const r = analyzeUrl('https://xn--sewa-u4d.com.np/login', BRANDS);
+  assert.ok(r);
+  assert.ok(r.checked.some((c) => c.en.includes('punycode')));
+});
+check('siddharthabank.com login is green', () => {
+  const r = analyzePage(sig({ url: 'https://www.siddharthabank.com/login', hostname: 'www.siddharthabank.com', hasPasswordField: true, pageText: 'siddhartha bank login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'siddhartha');
+});
+check('prabhubank.com login is green', () => {
+  const r = analyzePage(sig({ url: 'https://www.prabhubank.com/login', hostname: 'www.prabhubank.com', hasPasswordField: true, pageText: 'prabhu bank login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'prabhu');
+});
+check('rbb.com.np login is green', () => {
+  const r = analyzePage(sig({ url: 'https://www.rbb.com.np/login', hostname: 'www.rbb.com.np', hasPasswordField: true, pageText: 'rastriya banijya bank login' }), BRANDS);
+  assert.equal(r.verdict, 'green');
+  assert.equal(r.brandId, 'rbb');
+});
+for (const host of ['siddhartha-login.com', 'prabhu-bank.com', 'rbb-login.com']) {
+  check(`new-brand look-alike ${host} is red`, () => {
+    const r = analyzePage(sig({ url: `https://${host}/login`, hostname: host, hasPasswordField: true, pageText: 'login' }), BRANDS);
+    assert.equal(r.verdict, 'red');
+  });
+}
+check('arbb.com is NOT flagged — short tokens only match whole parts', () => {
+  const r = analyzePage(sig({ url: 'https://arbb.com/login', hostname: 'arbb.com', hasPasswordField: true, pageText: 'login' }), BRANDS);
   assert.equal(r.verdict, 'gray');
 });
 check('analyzeUrl: garbage text returns null', () => {

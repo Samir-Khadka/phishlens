@@ -22,11 +22,14 @@ import nabilBank from '../brands/nabil-bank.json';
 import nicAsia from '../brands/nic-asia.json';
 import globalIme from '../brands/global-ime.json';
 import nmb from '../brands/nmb.json';
+import siddhartha from '../brands/siddhartha.json';
+import prabhu from '../brands/prabhu.json';
+import rbb from '../brands/rbb.json';
 import google from '../brands/google.json';
 import paypal from '../brands/paypal.json';
 
 /** All bundled brands, in registry order. */
-export const REGISTRY: Brand[] = [esewa, khalti, imePay, fonePay, connectIps, nabilBank, nicAsia, globalIme, nmb, google, paypal] as Brand[];
+export const REGISTRY: Brand[] = [esewa, khalti, imePay, fonePay, connectIps, nabilBank, nicAsia, globalIme, nmb, siddhartha, prabhu, rbb, google, paypal] as Brand[];
 
 /** Only the entries whose official domains were verified against a source. */
 export function verifiedBrands(): Brand[] {

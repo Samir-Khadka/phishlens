@@ -5,7 +5,7 @@
 // are test strings only — never host look-alike login pages publicly.
 
 import { describe, expect, it } from 'vitest';
-import { analyzePage, analyzeUrl, levenshtein, normalizeConfusables, registrableDomain } from '../src/lib/engine';
+import { analyzePage, analyzeUrl, decodePunycodeHostname, decodePunycodeLabel, levenshtein, normalizeConfusables, registrableDomain } from '../src/lib/engine';
 import type { Brand, PageSignals } from '../src/lib/engine';
 import { verifiedBrands } from '../src/lib/registry';
 
@@ -492,6 +492,121 @@ describe('new brands in v0.3 — FonePay, ConnectIPS, NMB', () => {
       signals({
         url: 'https://anmb.com/login',
         hostname: 'anmb.com',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('gray');
+  });
+});
+
+describe('punycode decoding', () => {
+  it('decodes known labels', () => {
+    expect(decodePunycodeLabel('xn--bcher-kva')).toBe('bücher');
+    expect(decodePunycodeLabel('xn--n3h')).toBe('☃');
+    // xn--sewa-u4d is "еsewa" with a Cyrillic е (U+0435) as the first letter.
+    const decoded = decodePunycodeLabel('xn--sewa-u4d');
+    expect(decoded).not.toBeNull();
+    expect(decoded!.codePointAt(0)).toBe(0x0435);
+    expect(decoded!.slice(1)).toBe('sewa');
+  });
+
+  it('returns null for non-punycode and invalid labels', () => {
+    expect(decodePunycodeLabel('esewa')).toBeNull();
+    expect(decodePunycodeLabel('xn--!!')).toBeNull();
+  });
+
+  it('decodes a hostname label by label', () => {
+    expect(decodePunycodeHostname('xn--bcher-kva.ch')).toBe('bücher.ch');
+    expect(decodePunycodeHostname('www.esewa.com.np')).toBe('www.esewa.com.np');
+  });
+
+  it('a Cyrillic "е" esewa hidden behind punycode is red', () => {
+    // xn--sewa-u4d.com.np is "еsewa.com.np" with a Cyrillic е (U+0435).
+    const r = analyzePage(
+      signals({
+        url: 'https://xn--sewa-u4d.com.np/login',
+        hostname: 'xn--sewa-u4d.com.np',
+        hasPasswordField: true,
+        pageText: 'login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('red');
+    expect(r.reasons.some((x) => x.id === 'homoglyph-domain')).toBe(true);
+  });
+
+  it('a punycode page lists the decoding in "what was checked"', () => {
+    const r = analyzeUrl('https://xn--sewa-u4d.com.np/login', BRANDS);
+    expect(r).not.toBeNull();
+    expect(r!.checked.some((c) => c.en.includes('punycode'))).toBe(true);
+  });
+});
+
+describe('new brands in v0.4 — Siddhartha, Prabhu, RBB', () => {
+  it('siddharthabank.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.siddharthabank.com/login',
+        hostname: 'www.siddharthabank.com',
+        hasPasswordField: true,
+        pageText: 'siddhartha bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('siddhartha');
+  });
+
+  it('prabhubank.com login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.prabhubank.com/login',
+        hostname: 'www.prabhubank.com',
+        hasPasswordField: true,
+        pageText: 'prabhu bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('prabhu');
+  });
+
+  it('rbb.com.np login is green', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://www.rbb.com.np/login',
+        hostname: 'www.rbb.com.np',
+        hasPasswordField: true,
+        pageText: 'rastriya banijya bank login',
+      }),
+      BRANDS,
+    );
+    expect(r.verdict).toBe('green');
+    expect(r.brandId).toBe('rbb');
+  });
+
+  for (const host of ['siddhartha-login.com', 'prabhu-bank.com', 'rbb-login.com']) {
+    it(`${host} is red`, () => {
+      const r = analyzePage(
+        signals({
+          url: `https://${host}/login`,
+          hostname: host,
+          hasPasswordField: true,
+          pageText: 'login',
+        }),
+        BRANDS,
+      );
+      expect(r.verdict).toBe('red');
+    });
+  }
+
+  it('arbb.com is NOT flagged — short tokens only match whole parts', () => {
+    const r = analyzePage(
+      signals({
+        url: 'https://arbb.com/login',
+        hostname: 'arbb.com',
         hasPasswordField: true,
         pageText: 'login',
       }),

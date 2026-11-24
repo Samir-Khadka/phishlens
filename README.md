@@ -73,7 +73,7 @@ Manifest V3, TypeScript, WXT (one codebase: Chrome, Edge, Firefox)
 
 - All analysis runs in the browser by default.
 - No URLs, page text or form contents leave the device.
-- Reports to the community feed are opt-in, and strip typed values and query parameters.
+- Reports to the community feed are opt-in, and strip typed values and query parameters. Saved reports are listed in the popup ("My reports") and can be cleared there.
 - The collector never reads or stores what the user types into fields.
 - Open source (MIT), with this honest privacy policy in the README and store listing.
 
@@ -94,6 +94,9 @@ Verified set (verified Nov 2026 — see each file's `source` field):
 | FonePay | fonepay.com |
 | ConnectIPS | connectips.com |
 | NMB Bank | nmb.com.np (internet banking: web.nmb.com.np) |
+| Siddhartha Bank | siddharthabank.com |
+| Prabhu Bank | prabhubank.com |
+| Rastriya Banijya Bank | rbb.com.np |
 | Google | google.com, accounts.google.com |
 | PayPal | paypal.com |
 
@@ -111,11 +114,11 @@ npm run build        # .output/chrome-mv3
 npm run zip          # store-ready zip
 ```
 
-> **Note:** package installs are blocked in the sandbox this was written in, so `npm install` and the build have not been run here. The engine itself was verified directly: all 53 checks in `tests/check-engine.node.ts` pass against the real `src/lib/engine.ts` using Node 24's built-in type stripping. Run `npm test` on your own machine for the full Vitest suite.
+> **Note:** package installs are blocked in the sandbox this was written in, so `npm install` and the build have not been run here. The engine itself was verified directly: all 63 checks in `tests/check-engine.node.ts` pass against the real `src/lib/engine.ts` using Node 24's built-in type stripping. Run `npm test` on your own machine for the full Vitest suite.
 
 ## Testing
 
-- **Unit tests** (`tests/engine.test.ts`): 16 look-alike domain examples (all expected red), homoglyph/punycode, impersonation, cross-domain forms, no-HTTPS, Nepali urgency phrases (Devanagari + romanized), green on official domains, gray on unknown sites, unverified registry entries ignored, address-level checks (bare IP host, the `@` trick, unusual port, URL shortener), pasted-link checks, bilingual "what was checked" list, and false-positive regression tests on real login pages (GitHub, Facebook, Chase, Microsoft).
+- **Unit tests** (`tests/engine.test.ts`): 19 look-alike domain examples (all expected red), homoglyph/punycode (including a full RFC 3492 punycode decoder, verified against Node's own decoder), impersonation, cross-domain forms, no-HTTPS, Nepali urgency phrases (Devanagari + romanized), green on official domains, gray on unknown sites, unverified registry entries ignored, address-level checks (bare IP host, the `@` trick, unusual port, URL shortener), pasted-link checks, bilingual "what was checked" list, and false-positive regression tests on real login pages (GitHub, Facebook, Chase, Microsoft).
 - **Local fixtures** (`tests/fixtures/`): a fake eSewa login page and a plain shop login page. Clearly labelled as test fixtures — **never host look-alike login pages publicly**, even as demos; they can be mistaken for real phishing pages and get your domain or repo flagged.
 - **False positives matter most.** Before launch, run the popup against the login pages of popular legitimate sites. If real sites get warnings, users will uninstall.
 - For real-world data, use published phishing URL feeds and analyse them by URL and saved signals — don't browse live phishing sites on your main computer.

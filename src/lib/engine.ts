@@ -286,8 +286,18 @@ function brandToken(brand: Brand): string {
 function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] {
   const reasons: Reason[] = [];
   const host = hostname.toLowerCase();
-  const reg = registrableDomain(host);
-  const sub = subdomainPart(host);
+  // Decode any punycode labels first, so a homoglyph hidden behind
+  // encoding (e.g. xn--... for a Cyrillic "е" in "esewa") is compared
+  // by what it really spells, not by its encoded form. The raw host is
+  // still used for the punycode/TLD/hyphen checks and for display.
+  const decoded = decodePunycodeHostname(host);
+  const reg = registrableDomain(decoded);
+  const sub = subdomainPart(decoded);
+  // True when the host is the official domain (or a subdomain of one) of
+  // any verified brand — see the loop below for why this matters.
+  const isAnyOfficial = brands.some(
+    (b) => b.verified && isOfficialDomain(host, b),
+  );
   const path = (() => {
     try {
       return new URL(url).pathname.toLowerCase();
@@ -299,12 +309,33 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
   for (const brand of brands) {
     if (!brand.verified) continue;
     if (isOfficialDomain(host, brand)) continue; // handled by the caller
+    // A verified official domain is never a look-alike of another brand,
+    // even when two banks' acronym domains are close: "nmb.com.np" and
+    // "rbb.com.np" are two edits apart, and both are real. Only the
+    // domain's owner can create its subdomains, so skipping the whole
+    // per-brand comparison for official hosts is safe.
+    if (isAnyOfficial) continue;
     const token = brandToken(brand);
 
     for (const official of brand.officialDomains) {
       const officialReg = registrableDomain(official);
 
-      // 1. Look-alike: small edit distance on the registrable domain.
+      // 1. Homoglyph: equal after confusable normalisation, different raw
+      //    text. Checked first, because a single Cyrillic letter is also
+      //    one edit away — and "uses look-alike characters from another
+      //    alphabet" is the more precise explanation than "spelled
+      //    differently".
+      if (normalizeConfusables(reg) === normalizeConfusables(officialReg) && reg !== officialReg) {
+        reasons.push({
+          id: 'homoglyph-domain',
+          severity: 'high',
+          en: `This domain uses look-alike characters from another alphabet to imitate ${official}.`,
+          ne: `यो डोमेनले ${official} को नक्कल गर्न अर्को वर्णमालाका उस्तै देखिने अक्षरहरू प्रयोग गरेको छ।`,
+        });
+        break;
+      }
+
+      // 2. Look-alike: small edit distance on the registrable domain.
       const maxEdits = officialReg.length <= 8 ? 1 : 2;
       const dist = levenshtein(reg, officialReg);
       if (dist > 0 && dist <= maxEdits) {
@@ -313,17 +344,6 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
           severity: 'high',
           en: `This domain looks like ${official} but is spelled differently (${host} vs ${official}).`,
           ne: `यो डोमेन ${official} जस्तो देखिन्छ, तर हिज्जे फरक छ (${host} बनाम ${official})।`,
-        });
-        break;
-      }
-
-      // 2. Homoglyph: equal after confusable normalisation, different raw text.
-      if (normalizeConfusables(reg) === normalizeConfusables(officialReg) && reg !== officialReg) {
-        reasons.push({
-          id: 'homoglyph-domain',
-          severity: 'high',
-          en: `This domain uses look-alike characters from another alphabet to imitate ${official}.`,
-          ne: `यो डोमेनले ${official} को नक्कल गर्न अर्को वर्णमालाका उस्तै देखिने अक्षरहरू प्रयोग गरेको छ।`,
         });
         break;
       }
@@ -461,6 +481,99 @@ function domainChecks(hostname: string, url: string, brands: Brand[]): Reason[] 
 }
 
 // ---------------------------------------------------------------------------
+// Punycode (RFC 3492) decoding — pure TypeScript, no imports.
+//
+// A punycode label hides non-ASCII letters behind "xn--...". Browsers show
+// the encoded form when a label mixes scripts, which is exactly how a
+// homoglyph attack hides: xn--esewa-... can spell "еsewa" with a Cyrillic
+// "е" that looks identical to the Latin "e". Decoding first lets the
+// look-alike and homoglyph checks see the real spelling. Invalid input
+// returns null and the label is left as-is.
+ // ---------------------------------------------------------------------------
+
+const PUNYCODE_BASE = 36;
+const PUNYCODE_TMIN = 1;
+const PUNYCODE_TMAX = 26;
+const PUNYCODE_SKEW = 38;
+const PUNYCODE_DAMP = 700;
+const PUNYCODE_INITIAL_BIAS = 72;
+const PUNYCODE_INITIAL_N = 128;
+
+function punycodeDigit(char: string): number {
+  const code = char.charCodeAt(0);
+  if (code >= 48 && code <= 57) return code - 48 + 26; // 0-9 -> 26-35
+  if (code >= 65 && code <= 90) return code - 65; // A-Z -> 0-25
+  if (code >= 97 && code <= 122) return code - 97; // a-z -> 0-25
+  return -1;
+}
+
+function punycodeAdapt(delta: number, numPoints: number, firstTime: boolean): number {
+  let d = firstTime ? Math.floor(delta / PUNYCODE_DAMP) : delta >> 1;
+  d += Math.floor(d / numPoints);
+  let k = 0;
+  while (d > ((PUNYCODE_BASE - PUNYCODE_TMIN) * PUNYCODE_TMAX) / 2) {
+    d = Math.floor(d / (PUNYCODE_BASE - PUNYCODE_TMIN));
+    k += PUNYCODE_BASE;
+  }
+  return Math.floor(k + ((PUNYCODE_BASE - PUNYCODE_TMIN + 1) * d) / (d + PUNYCODE_SKEW));
+}
+
+/** Decode one punycode label ("xn--bcher-kva") to Unicode ("bücher"). */
+export function decodePunycodeLabel(label: string): string | null {
+  if (!label.toLowerCase().startsWith('xn--')) return null;
+  const rest = label.slice(4);
+  const delim = rest.lastIndexOf('-');
+  const output: number[] = [];
+  let index = 0;
+  if (delim > 0) {
+    for (const ch of rest.slice(0, delim)) output.push(ch.charCodeAt(0));
+    index = delim + 1;
+  }
+  let n = PUNYCODE_INITIAL_N;
+  let i = 0;
+  let bias = PUNYCODE_INITIAL_BIAS;
+  while (index < rest.length) {
+    const oldi = i;
+    let w = 1;
+    let k = PUNYCODE_BASE;
+    for (;;) {
+      if (index >= rest.length) return null;
+      const digit = punycodeDigit(rest[index++]);
+      if (digit < 0) return null;
+      i += digit * w;
+      const t =
+        k <= bias
+          ? PUNYCODE_TMIN
+          : k >= bias + PUNYCODE_TMAX
+            ? PUNYCODE_TMAX
+            : k - bias;
+      if (digit < t) break;
+      w *= PUNYCODE_BASE - t;
+      k += PUNYCODE_BASE;
+    }
+    const outLen = output.length + 1;
+    bias = punycodeAdapt(i - oldi, outLen, oldi === 0);
+    n += Math.floor(i / outLen);
+    i %= outLen;
+    output.splice(i, 0, n);
+    i++;
+  }
+  try {
+    return String.fromCodePoint(...output);
+  } catch {
+    return null;
+  }
+}
+
+/** Decode every punycode label in a hostname; other labels pass through. */
+export function decodePunycodeHostname(hostname: string): string {
+  return hostname
+    .split('.')
+    .map((label) => decodePunycodeLabel(label) ?? label)
+    .join('.');
+}
+
+// ---------------------------------------------------------------------------
 // Page checks
 // ---------------------------------------------------------------------------
 
@@ -592,6 +705,12 @@ export function analyzePage(signals: PageSignals, brands: Brand[]): AnalysisResu
     en: 'Look-alike, homoglyph, subdomain and path tricks checked',
     ne: 'उस्तै देखिने, होमोग्लिफ, सबडोमेन र पाथका छलहरू जाँचिए',
   });
+  if (signals.hostname.toLowerCase().includes('xn--')) {
+    checked.push({
+      en: 'Encoded domain (punycode) decoded and checked for hidden look-alike letters',
+      ne: 'इन्कोड गरिएको डोमेन (punycode) डिकोड गरेर लुकेका उस्तै अक्षर जाँचिए',
+    });
+  }
 
   const hasLoginField =
     signals.hasPasswordField || signals.hasOtpField || signals.hasPinField;
